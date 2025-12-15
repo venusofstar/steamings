@@ -52,7 +52,7 @@ app.get("/dashboard", (req, res) => {
     </style>
   </head>
   <body>
-    <h1>M3U8 Short URL Dashboard</h1>
+    <h1>HONOR TV Streaming Dashboard</h1>
     <h2>Streams</h2>
     <ul>`;
   for (let key in streams) {
@@ -90,11 +90,11 @@ app.post("/dashboard/add", (req, res) => {
  */
 app.get("/", (req, res) => {
   res.send(`
-    <h2>Welcome to M3U8 Router</h2>
-    <p>Access your streams directly via:</p>
+    <h2>Welcome to HONOR TV</h2>
+    <p>Access Stream:</p>
     <ul>
-      <li>/kapamilya/index.m3u8</li>
-      <li>/gma/index.m3u8</li>
+      <li></li>
+      <li></li>
     </ul>
   `);
 });
