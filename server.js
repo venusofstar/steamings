@@ -1,7 +1,13 @@
 import express from "express";
+import bodyParser from "body-parser";
+import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// parse JSON and form submissions
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 /**
  * Preloaded streams
@@ -9,33 +15,61 @@ const PORT = process.env.PORT || 3000;
 const streams = {
   kapamilya:
     "https://manifest.googlevideo.com/api/manifest/hls_variant/expire/1765826181/ei/JQpAaYenG67H0-kP37Ct-Ag/ip/126.209.53.186/id/rc4KfaBrGIc.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/file/index.m3u8",
-
   gma:
-    "https://manifest.googlevideo.com/api/manifest/hls_variant/expire/1765832771/ei/4yNAaf7DEvq12roPzv_emQs/ip/112.205.135.106/id/n0q7qAEljA8.1~45720746/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/hfr/1/playlist_duration/30/manifest_duration/30/maudio/1/bui/AYUSA3An7fek690wEZX1up1iMtVIuQdl7FmHkOPUsA43CCsUT9by7WcoLDaBYEwYacHi2caEjNvOmWVS/spc/wH4Qq-O-tZK9iQ6ha_5CUEO9iRPD3mtKndr1KfvOaeWHr2ZRXqOqgE-5pT8/vprv/1/go/1/rqh/5/pacing/0/nvgoi/1/ncsapi/1/keepalive/yes/fexp/51331020%2C51552689%2C51565115%2C51565682%2C51580968/dover/11/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Chfr%2Cplaylist_duration%2Cmanifest_duration%2Cmaudio%2Cbui%2Cspc%2Cvprv%2Cgo%2Crqh%2Citag%2Cplaylist_type/sig/AJfQdSswRQIhAKypzo5sCyC6-a0F5hvOtNFXIWldO8OD1TekIxlXR-YnAiBR0hC-8otWC1-wx9Yi_kQCTrMI42gvc3KrLpK5rGFpXA%3D%3D/file/index.m3u8"
+    "https://manifest.googlevideo.com/api/manifest/hls_variant/expire/1765809651/ei/k8k_abjZJYaq2roPkpPvuQ0/ip/180.190.223.161/id/n0q7qAEljA8.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/file/index.m3u8"
 };
 
 /**
- * IMPORTANT: exact route
+ * Serve M3U8 redirect
  */
 app.get("/:id/index.m3u8", (req, res) => {
   const id = req.params.id;
-
-  console.log("Requested:", id);
-
-  if (!streams[id]) {
-    return res.status(404).send("Stream not found");
-  }
-
-  return res.redirect(streams[id]);
+  if (!streams[id]) return res.status(404).send("Stream not found");
+  res.redirect(streams[id]);
 });
 
 /**
- * Root test
+ * Dashboard
  */
-app.get("/", (req, res) => {
-  res.send("OK – M3U8 Router Running");
+app.get("/dashboard", (req, res) => {
+  let html = `
+    <h1>M3U8 Short URL Dashboard</h1>
+    <h2>Streams</h2>
+    <ul>`;
+  for (let key in streams) {
+    html += `<li><a href="/${key}/index.m3u8" target="_blank">${key}</a></li>`;
+  }
+  html += `</ul>
+    <h2>Add New Stream</h2>
+    <form method="POST" action="/dashboard/add">
+      <label>ID: <input type="text" name="id" required></label><br>
+      <label>URL (.m3u8): <input type="text" name="url" required></label><br>
+      <button type="submit">Add Stream</button>
+    </form>
+  `;
+  res.send(html);
 });
 
-app.listen(PORT, () => {
-  console.log("Server running on", PORT);
+/**
+ * Handle adding new stream
+ */
+app.post("/dashboard/add", (req, res) => {
+  const { id, url } = req.body;
+  if (!id || !url || !url.endsWith(".m3u8")) {
+    return res.send("Invalid ID or URL. <a href='/dashboard'>Go back</a>");
+  }
+  streams[id] = url;
+  res.redirect("/dashboard");
 });
+
+/**
+ * Root
+ */
+app.get("/", (req, res) => {
+  res.send(`
+    <h2>M3U8 Router Running</h2>
+    <p>Go to <a href="/dashboard">Dashboard</a></p>
+  `);
+});
+
+app.listen(PORT, () => console.log("Server running on port", PORT));
