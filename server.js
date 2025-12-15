@@ -1,6 +1,5 @@
 import express from "express";
 import bodyParser from "body-parser";
-import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,10 +28,30 @@ app.get("/:id/index.m3u8", (req, res) => {
 });
 
 /**
- * Dashboard
+ * Dashboard (accessible only via /dashboard)
  */
 app.get("/dashboard", (req, res) => {
   let html = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>M3U8 Dashboard</title>
+    <style>
+      body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+      h1 { color: #333; }
+      ul { list-style: none; padding: 0; }
+      li { background: #fff; margin: 10px 0; padding: 10px; border-radius: 5px; }
+      a { text-decoration: none; color: #007BFF; font-weight: bold; }
+      a:hover { text-decoration: underline; }
+      form { background: #fff; padding: 15px; border-radius: 5px; margin-top: 20px; }
+      label { display: block; margin: 10px 0 5px; }
+      input[type=text] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+      button { margin-top: 10px; padding: 10px 20px; background: #28a745; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+      button:hover { background: #218838; }
+    </style>
+  </head>
+  <body>
     <h1>M3U8 Short URL Dashboard</h1>
     <h2>Streams</h2>
     <ul>`;
@@ -42,10 +61,14 @@ app.get("/dashboard", (req, res) => {
   html += `</ul>
     <h2>Add New Stream</h2>
     <form method="POST" action="/dashboard/add">
-      <label>ID: <input type="text" name="id" required></label><br>
-      <label>URL (.m3u8): <input type="text" name="url" required></label><br>
+      <label>ID:</label>
+      <input type="text" name="id" required>
+      <label>URL (.m3u8):</label>
+      <input type="text" name="url" required>
       <button type="submit">Add Stream</button>
     </form>
+  </body>
+  </html>
   `;
   res.send(html);
 });
@@ -63,12 +86,16 @@ app.post("/dashboard/add", (req, res) => {
 });
 
 /**
- * Root
+ * Home page (hidden dashboard link)
  */
 app.get("/", (req, res) => {
   res.send(`
-    <h2>M3U8 Router Running</h2>
-    <p>Go to <a href="/dashboard">Dashboard</a></p>
+    <h2>Welcome to M3U8 Router</h2>
+    <p>Access your streams directly via:</p>
+    <ul>
+      <li>/kapamilya/index.m3u8</li>
+      <li>/gma/index.m3u8</li>
+    </ul>
   `);
 });
 
