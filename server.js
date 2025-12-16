@@ -4,7 +4,6 @@ import bodyParser from "body-parser";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// parse JSON and form submissions
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -28,75 +27,105 @@ app.get("/:id/index.m3u8", (req, res) => {
 });
 
 /**
- * Dashboard (accessible only via /dashboard)
+ * Dashboard
  */
 app.get("/dashboard", (req, res) => {
   let html = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>M3U8 Dashboard</title>
-    <style>
-      body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-      h1 { color: #333; }
-      ul { list-style: none; padding: 0; }
-      li { background: #fff; margin: 10px 0; padding: 10px; border-radius: 5px; }
-      a { text-decoration: none; color: #007BFF; font-weight: bold; }
-      a:hover { text-decoration: underline; }
-      form { background: #fff; padding: 15px; border-radius: 5px; margin-top: 20px; }
-      label { display: block; margin: 10px 0 5px; }
-      input[type=text] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-      button { margin-top: 10px; padding: 10px 20px; background: #28a745; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-      button:hover { background: #218838; }
-    </style>
-  </head>
-  <body>
-    <h1>HONOR TV Streaming Dashboard</h1>
-    <h2>Streams</h2>
-    <ul>`;
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>M3U8 Dashboard</title>
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:20px }
+li { background:#fff; padding:10px; margin:10px 0; border-radius:6px }
+input { padding:6px; width:60% }
+button { padding:6px 12px; margin-left:5px; cursor:pointer }
+.add { background:#28a745; color:#fff; border:none }
+.edit { background:#ffc107; border:none }
+.del { background:#dc3545; color:#fff; border:none }
+</style>
+</head>
+<body>
+
+<h1>HONOR TV Dashboard</h1>
+<ul>
+`;
+
   for (let key in streams) {
-    html += `<li><a href="/${key}/index.m3u8" target="_blank">${key}</a></li>`;
+    html += `
+<li>
+<b>${key}</b><br>
+<a href="/${key}/index.m3u8" target="_blank">Open Stream</a>
+
+<form method="POST" action="/dashboard/edit" style="margin-top:5px">
+  <input type="hidden" name="id" value="${key}">
+  <input type="text" name="url" value="${streams[key]}" required>
+  <button class="edit">Edit</button>
+</form>
+
+<form method="POST" action="/dashboard/delete" style="margin-top:5px">
+  <input type="hidden" name="id" value="${key}">
+  <button class="del">Delete</button>
+</form>
+</li>
+`;
   }
-  html += `</ul>
-    <h2>Add New Stream</h2>
-    <form method="POST" action="/dashboard/add">
-      <label>ID:</label>
-      <input type="text" name="id" required>
-      <label>URL (.m3u8):</label>
-      <input type="text" name="url" required>
-      <button type="submit">Add Stream</button>
-    </form>
-  </body>
-  </html>
-  `;
+
+  html += `
+</ul>
+
+<h2>Add New Stream</h2>
+<form method="POST" action="/dashboard/add">
+<input name="id" placeholder="stream id" required>
+<input name="url" placeholder="m3u8 url" required>
+<button class="add">Add</button>
+</form>
+
+</body>
+</html>
+`;
   res.send(html);
 });
 
 /**
- * Handle adding new stream
+ * ADD
  */
 app.post("/dashboard/add", (req, res) => {
   const { id, url } = req.body;
   if (!id || !url || !url.endsWith(".m3u8")) {
-    return res.send("Invalid ID or URL. <a href='/dashboard'>Go back</a>");
+    return res.send("Invalid input <a href='/dashboard'>Back</a>");
   }
   streams[id] = url;
   res.redirect("/dashboard");
 });
 
 /**
- * Home page (hidden dashboard link)
+ * EDIT
+ */
+app.post("/dashboard/edit", (req, res) => {
+  const { id, url } = req.body;
+  if (!streams[id] || !url.endsWith(".m3u8")) {
+    return res.send("Invalid edit <a href='/dashboard'>Back</a>");
+  }
+  streams[id] = url;
+  res.redirect("/dashboard");
+});
+
+/**
+ * DELETE
+ */
+app.post("/dashboard/delete", (req, res) => {
+  const { id } = req.body;
+  delete streams[id];
+  res.redirect("/dashboard");
+});
+
+/**
+ * Home
  */
 app.get("/", (req, res) => {
-  res.send(`
-    <h2>Welcome to HONOR TV</h2>
-    <p>Access Stream:</p>
-    <ul>
-      <li></li>
-      <li></li>
-    </ul>
-  `);
+  res.send("<h2>HONOR TV</h2>");
 });
 
 app.listen(PORT, () => console.log("Server running on port", PORT));
