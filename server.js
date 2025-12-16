@@ -4,14 +4,13 @@ import bodyParser from "body-parser";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Parse JSON and URL-encoded form data
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // Preloaded streams
 const streams = {
-  kapamilya: "https://example.com/kapamilya.m3u8",
-  gma: "https://example.com/gma.m3u8",
+  kapamilya: "",
+  gma: "https://manifest.googlevideo.com/api/manifest/hls_variant/expire/1765895786/ei/ChpBadzXLOHN2roP64iw-A4/ip/180.190.172.13/id/SKtm0Unev4Q.1/source/yt_live_broadcast/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/tx/51666465/txs/51666463%2C51666464%2C51666465%2C51666466%2C51666467/hfr/1/playlist_duration/30/manifest_duration/30/maudio/1/gcr/ph/bui/AYUSA3CSRdIalpJWgLPwT6Wv7-G9c9s1SvKwMl2SaDwDf_vbP7D-02EOfO8GylQOEuGYufcL1aeZDrmv/spc/wH4Qq0sDFMtWfDcFH4JDAmyEMChWP46EfQQ0HuzGXwlzqBugxFUkstQ_EMn3ITHXENSy6hcb/vprv/1/go/1/ns/nJ856A8d-bZ7kIE9OVbmzOYR/rqh/5/pacing/0/nvgoi/1/ncsapi/1/keepalive/yes/fexp/51331020%2C51552689%2C51565116%2C51565681%2C51580968%2C51626155/dover/11/n/Tx9wIVVEKglHh3gARCP/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Ctx%2Ctxs%2Chfr%2Cplaylist_duration%2Cmanifest_duration%2Cmaudio%2Cgcr%2Cbui%2Cspc%2Cvprv%2Cgo%2Cns%2Crqh%2Citag%2Cplaylist_type/sig/AJfQdSswRQIgDwbl3emwsHIg97NzFkQw3LaHPlIaEcCwDvidv2Z-IvwCIQCXR3nvYYhUAoCLIKoEJ1QRr8u11HtYYOGS442n4utV_A%3D%3D/file/index.m3u8",
 };
 
 // Redirect to M3U8 URL
@@ -101,14 +100,12 @@ app.post("/dashboard/delete", (req, res) => {
   res.redirect("/dashboard");
 });
 
-// Home page
+// Home page (hidden links)
 app.get("/", (req, res) => {
-  let html = "<h2>HONOR TV</h2><ul>";
-  for (let key in streams) {
-    html += `<li><a href="/${key}/index.m3u8">${key}</a></li>`;
-  }
-  html += "</ul>";
-  res.send(html);
+  res.send(`
+    <h2>Welcome to HONOR TV</h2>
+    <p>Streams are hidden. Access the dashboard to manage streams.</p>
+  `);
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
