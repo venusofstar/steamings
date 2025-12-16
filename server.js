@@ -142,11 +142,6 @@ res.redirect("/dashboard");
 
 /**
 
-Home page
-*/
-app.get("/", (req, res) => {
-let html = <h2>HONOR TV</h2><ul>;
-});
 
 
 app.listen(PORT, () => console.log(Server running on port ${PORT}));
