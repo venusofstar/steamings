@@ -1,0 +1,116 @@
+const express = require('express');
+const request = require('request');
+const { URL } = require('url');
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+/* ================= STREAM MAP (SERVER ONLY) ================= */
+const streams = {
+  thekingdom:
+    'https://tevh.9ljp.com/vod/1/2026/01/24/6d34af1ff298/index5.m3u8?wsSecret=5cb7a607a15beb210224810e76db31b4&wsTime=69783c86',
+  
+  countdown_hero:
+    'https://vod3.cf.dmcdn.net/sec2(0BthFHqVzUjgSkAGuKrPavSRG3jGLX6LJIlCkUAM5kPcrSjwxgXRXwlRTskDH5jNFs1KG1m5FkrJ9VYQ3jT6VLrUlPUSFqoQbTCyrwFy93A80A-6OL3lKKKtCj7agwk-VKLLFcGkLzi3koNc-GzAyDsNWGqQ3tqFQrYZfjCYuQiI13Ggu0Yxwk3njAKHcqGzNA4LrqMOSK-um_bLO4auYw)/video/fmp4/603048526/h264_aac_vert/3/manifest.m3u8#cell=cf3',
+  backin_actiontagalog:
+    'https://ia601806.us.archive.org/2/items/back-in-action-tagalog-480-p/Back%20in%20Action%20%5BTagalog%5D-480P.mp4',
+
+  UNTOLD_2025:
+    'https://tevh.9ljp.com/vod/1/2025/08/01/bd4120b363da/index5.m3u8?wsSecret=6e520070865cdb80edac26888b4fb7d9&wsTime=688e0ebd',
+
+   kapamilya: "https://amg01006-abs-cbn-kapcha-abscbn-abscbnono-ad-4e.amagi.tv/playlist/amg01006-abs-cbn-kapcha-hls-abscbnono/playlist.m3u8",
+  teleradyo: "https://amg01006-abs-cbn-teleradyoabscbn-abscbnono-ad-z8.amagi.tv/playlist/amg01006-abs-cbn-teleradyo-hls-abscbnono/playlist.m3u8",
+  cinemo_global: "https://amg01006-abs-cbn-cinemo-abscbn-abscbnono-ad-5k.amagi.tv/playlist/amg01006-abs-cbn-cinemo-hls-abscbnono/playlist.m3u8",
+  cinema_one: "https://amg01006-abs-cbn-cinemaoneabscbn-abscbnono-ad-im.amagi.tv/playlist/amg01006-abs-cbn-cinemaone-hls-abscbnono/playlist.m3u8",
+  cna: "https://dai4s4shjeg0o.cloudfront.net/iWantTVPh82ba2069c285/9c5127dd7652483785dece590f60b299/master.m3u8"
+  };
+
+
+/* ================= M3U8 PROXY ================= */
+app.get('/:stream/vod.m3u8', (req, res) => {
+  const key = req.params.stream;
+  const streamUrl = streams[key];
+
+  if (!streamUrl) return res.status(404).send('Invalid stream');
+
+  const base = new URL(streamUrl);
+  const basePath = base.href.substring(0, base.href.lastIndexOf('/') + 1);
+
+  request.get(streamUrl, (err, response, body) => {
+    if (err || response.statusCode !== 200) {
+      return res.status(502).send('Playlist error');
+    }
+
+    // Rewrite segment URLs → hidden proxy
+    const rewritten = body.replace(/^(?!#)(.+)$/gm, line => {
+      line = line.trim();
+      if (!line || line.startsWith('#')) return line;
+
+      const full = new URL(line, basePath).href;
+      return `/segment.ts?u=${Buffer.from(full).toString('base64')}`;
+    });
+
+    res.set({
+      'Content-Type': 'application/vnd.apple.mpegurl',
+      'Cache-Control': 'no-store'
+    });
+
+    res.send(rewritten);
+  });
+});
+
+/* ================= SEGMENT PROXY ================= */
+app.get('/segment.ts', (req, res) => {
+  if (!req.query.u) return res.sendStatus(400);
+
+  const segmentUrl = Buffer
+    .from(req.query.u, 'base64')
+    .toString('utf8');
+
+  request
+    .get(segmentUrl)
+    .on('response', r => {
+      res.set({
+        'Content-Type': 'video/mp2t',
+        'Cache-Control': 'no-store'
+      });
+    })
+    .on('error', () => res.sendStatus(502))
+    .pipe(res);
+});
+
+/* ================= HOME ================= */
+app.get('/', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HONOR TV PH</title>
+  <style>
+    body{
+      margin:0;height:100vh;display:flex;justify-content:center;align-items:center;
+      background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+      font-family:Arial;color:#fff;text-align:center
+    }
+    .box{
+      background:rgba(0,0,0,.45);padding:30px 40px;border-radius:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:420px
+    }
+    h1{color:#00e5ff;margin:0}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>📺 HONOR TV PH</h1>
+    <p>Enjoy Watching Movies</p>
+    <p><small>@2025</small></p>
+  </div>
+</body>
+</html>
+`);
+});
+
+/* ================= START ================= */
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
