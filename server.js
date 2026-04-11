@@ -21,6 +21,11 @@ if (fs.existsSync(DATA_FILE)) {
   streams = {
     thekingdom: "https://tevh.9ljp.com/vod/1/2026/01/24/6d34af1ff298/index5.m3u8?wsSecret=5cb7a607a15beb210224810e76db31b4&wsTime=69783c86",
     countdown_hero: "https://vod3.cf.dmcdn.net/sec2(0BthFHqVzUjgSkAGuKrPavSRG3jGLX6LJIlCkUAM5kPcrSjwxgXRXwlRTskDH5jNFs1KG1m5FkrJ9VYQ3jT6VLrUlPUSFqoQbTCyrwFy93A80A-6OL3lKKKtCj7agwk-VKLLFcGkLzi3koNc-GzAyDsNWGqQ3tqFQrYZfjCYuQiI13Ggu0Yxwk3njAKHcqGzNA4LrqMOSK-um_bLO4auYw)/video/fmp4/603048526/h264_aac_vert/3/manifest.m3u8#cell=cf3",
+   kapamilya: "https://amg01006-abs-cbn-kapcha-abscbn-abscbnono-ad-4e.amagi.tv/playlist/amg01006-abs-cbn-kapcha-hls-abscbnono/playlist.m3u8",
+  teleradyo: "https://amg01006-abs-cbn-teleradyoabscbn-abscbnono-ad-z8.amagi.tv/playlist/amg01006-abs-cbn-teleradyo-hls-abscbnono/playlist.m3u8",
+  cinemo_global: "https://amg01006-abs-cbn-cinemo-abscbn-abscbnono-ad-5k.amagi.tv/playlist/amg01006-abs-cbn-cinemo-hls-abscbnono/playlist.m3u8",
+  cinema_one: "https://amg01006-abs-cbn-cinemaoneabscbn-abscbnono-ad-im.amagi.tv/playlist/amg01006-abs-cbn-cinemaone-hls-abscbnono/playlist.m3u8",
+  cna: "https://dai4s4shjeg0o.cloudfront.net/iWantTVPh82ba2069c285/9c5127dd7652483785dece590f60b299/master.m3u8"
   };
   fs.writeFileSync(DATA_FILE, JSON.stringify(streams, null, 2));
 }
