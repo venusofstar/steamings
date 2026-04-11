@@ -3,145 +3,60 @@ import fetch from "node-fetch";
 import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(cors());
 
+const PORT = process.env.PORT || 3000;
+
 function decodeBase64(str) {
-  try {
-    return Buffer.from(str, "base64").toString("utf8");
-  } catch {
-    return null;
-  }
+  return Buffer.from(str, "base64").toString("utf8");
 }
 
 function encodeBase64(str) {
   return Buffer.from(str).toString("base64");
 }
 
-function absoluteUrl(base, relative) {
-  try {
-    return new URL(relative, base).href;
-  } catch {
-    return relative;
-  }
-}
-
-function isPlaylist(line) {
-  return line.includes(".m3u8");
-}
-
-function isSegment(line) {
-  return (
-    line.includes(".ts") ||
-    line.includes(".m4s") ||
-    line.includes(".mp4") ||
-    line.includes(".aac")
-  );
-}
-
 app.get("/", async (req, res) => {
   try {
-    const encodedUrl = req.query.url;
-    const encodedHeaders = req.query.headers;
+    const target = decodeBase64(req.query.url || "");
+    if (!target) return res.send("Missing URL");
 
-    if (!encodedUrl) {
-      return res.status(400).send("Missing url");
+    let headers = {};
+    if (req.query.headers) {
+      headers = JSON.parse(decodeBase64(req.query.headers));
     }
 
-    const targetUrl = decodeBase64(encodedUrl);
-    if (!targetUrl) {
-      return res.status(400).send("Invalid URL encoding");
-    }
-
-    let customHeaders = {};
-
-    if (encodedHeaders) {
-      try {
-        customHeaders = JSON.parse(decodeBase64(encodedHeaders));
-      } catch {
-        customHeaders = {};
-      }
-    }
-
-    const response = await fetch(targetUrl, {
+    const response = await fetch(target, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        ...customHeaders,
-      },
+        "User-Agent": "Mozilla/5.0",
+        ...headers
+      }
     });
 
-    if (!response.ok) {
-      return res.status(response.status).send("Failed to fetch stream");
-    }
+    const text = await response.text();
 
-    const contentType = response.headers.get("content-type") || "";
+    const base = new URL(target);
 
-    // Playlist
-    if (
-      contentType.includes("application/vnd.apple.mpegurl") ||
-      contentType.includes("application/x-mpegURL") ||
-      targetUrl.includes(".m3u8")
-    ) {
-      const text = await response.text();
+    const rewritten = text.split("\n").map(line => {
+      if (
+        line &&
+        !line.startsWith("#")
+      ) {
+        const abs = new URL(line, base).href;
+        return `/?url=${encodeBase64(abs)}${
+          req.query.headers ? `&headers=${req.query.headers}` : ""
+        }`;
+      }
+      return line;
+    }).join("\n");
 
-      const rewritten = text
-        .split("\n")
-        .map((line) => {
-          const trimmed = line.trim();
+    res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+    res.send(rewritten);
 
-          if (
-            !trimmed ||
-            trimmed.startsWith("#") &&
-            !trimmed.includes("URI=")
-          ) {
-            return line;
-          }
-
-          // Rewrite key URI
-          if (line.includes('URI="')) {
-            return line.replace(/URI="([^"]+)"/, (_, uri) => {
-              const abs = absoluteUrl(targetUrl, uri);
-              return `URI="/?url=${encodeBase64(abs)}${
-                encodedHeaders ? `&headers=${encodedHeaders}` : ""
-              }"`;
-            });
-          }
-
-          if (isPlaylist(trimmed) || isSegment(trimmed)) {
-            const abs = absoluteUrl(targetUrl, trimmed);
-            return `/?url=${encodeBase64(abs)}${
-              encodedHeaders ? `&headers=${encodedHeaders}` : ""
-            }`;
-          }
-
-          return line;
-        })
-        .join("\n");
-
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.apple.mpegurl"
-      );
-      return res.send(rewritten);
-    }
-
-    // Segments / keys
-    const buffer = Buffer.from(await response.arrayBuffer());
-
-    res.setHeader(
-      "Content-Type",
-      response.headers.get("content-type") || "application/octet-stream"
-    );
-
-    res.send(buffer);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Proxy error");
+  } catch (e) {
+    res.status(500).send("Proxy error: " + e.message);
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Proxy running on port ${PORT}`);
+  console.log("Server running");
 });
